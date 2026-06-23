@@ -1,0 +1,13 @@
+{
+  "name": "walkthrough-overlay-spike",
+  "private": true,
+  "type": "module",
+  "version": "0.0.0",
+  "description": "Spike: one in-page overlay engine that serves both screenshots and video",
+  "scripts": {
+    "spike": "node spike.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.49.0"
+  }
+}

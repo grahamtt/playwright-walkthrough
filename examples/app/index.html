@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Acme — Projects</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.5 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: #1b2330; background: #f5f7fb; }
+  header { display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 24px; background: #fff; border-bottom: 1px solid #e6e9f0; }
+  .brand { font-weight: 700; font-size: 17px; letter-spacing: -.2px; }
+  .brand span { color: #4f8cff; }
+  .actions { display: flex; gap: 12px; align-items: center; }
+  button { font: inherit; cursor: pointer; border-radius: 8px; border: 1px solid transparent; padding: 9px 16px; }
+  .primary { background: #4f8cff; color: #fff; font-weight: 600; }
+  .ghost { background: #fff; border-color: #d7dce7; color: #2a3142; }
+  main { max-width: 880px; margin: 32px auto; padding: 0 24px; }
+  h1 { font-size: 26px; margin: 0 0 4px; letter-spacing: -.4px; }
+  .sub { color: #6b7385; margin: 0 0 24px; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .card { background: #fff; border: 1px solid #e6e9f0; border-radius: 14px; padding: 18px; }
+  .card h3 { margin: 0 0 6px; font-size: 16px; }
+  .card p { margin: 0; color: #6b7385; font-size: 14px; }
+  .empty { grid-column: 1 / -1; text-align: center; color: #98a0b3; padding: 40px;
+    border: 1px dashed #d7dce7; border-radius: 14px; }
+  .field { margin: 18px 0; }
+  label { display: block; font-weight: 600; margin-bottom: 6px; }
+  input[type=text] { width: 100%; padding: 11px 13px; border: 1px solid #d7dce7;
+    border-radius: 9px; font: inherit; }
+  dialog { border: none; border-radius: 16px; padding: 24px; width: 440px;
+    box-shadow: 0 24px 80px rgba(20,28,50,.3); }
+  dialog::backdrop { background: rgba(20,28,50,.25); }
+  .dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+</style>
+</head>
+<body>
+  <header>
+    <div class="brand">Acme<span>·</span>Projects</div>
+    <div class="actions">
+      <button class="ghost" id="invite">Invite</button>
+      <button class="primary" id="new-project">New Project</button>
+    </div>
+  </header>
+  <main>
+    <h1>Your projects</h1>
+    <p class="sub">Everything you're working on, in one place.</p>
+    <div class="grid" id="grid">
+      <div class="empty" id="empty">No projects yet — create your first one.</div>
+    </div>
+  </main>
+
+  <dialog id="dialog">
+    <h2 style="margin:0 0 4px">New project</h2>
+    <p class="sub" style="margin:0 0 8px">Give it a name to get started.</p>
+    <div class="field">
+      <label for="project-name">Project name</label>
+      <input type="text" id="project-name" placeholder="e.g. Website redesign" />
+    </div>
+    <div class="dialog-actions">
+      <button class="ghost" id="cancel">Cancel</button>
+      <button class="primary" id="create">Create project</button>
+    </div>
+  </dialog>
+
+  <script>
+    const dialog = document.getElementById('dialog');
+    document.getElementById('new-project').onclick = () => dialog.showModal();
+    document.getElementById('cancel').onclick = () => dialog.close();
+    document.getElementById('create').onclick = () => {
+      const name = document.getElementById('project-name').value.trim() || 'Untitled';
+      document.getElementById('empty')?.remove();
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = '<h3></h3><p>Created just now</p>';
+      card.querySelector('h3').textContent = name;
+      document.getElementById('grid').appendChild(card);
+      dialog.close();
+    };
+  </script>
+</body>
+</html>

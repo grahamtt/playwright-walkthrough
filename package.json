@@ -1,0 +1,13 @@
+{
+  "name": "playwright-walkthrough",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Turn Playwright functional tests into user walkthroughs (markdown + screenshots).",
+  "scripts": {
+    "test": "playwright test --project=chromium",
+    "walkthrough": "playwright test --project=walkthrough"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0"
+  }
+}

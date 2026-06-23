@@ -1,0 +1,6 @@
+node_modules/
+walkthroughs/
+spike/out/
+spike/node_modules/
+test-results/
+playwright-report/
