@@ -1,4 +1,5 @@
 node_modules/
+dist/
 walkthroughs/
 spike/out/
 spike/node_modules/

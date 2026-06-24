@@ -55,7 +55,7 @@ export class Walkthrough {
   async step<T>(narration: string, fn: () => Promise<T> | T, opts: StepOptions = {}): Promise<T> {
     if (!this.enabled) return fn();
     const result = await fn();
-    await this.shoot('step', narration, undefined, opts.screenshot ?? 'after', opts);
+    if (opts.screenshot !== 'none') await this.shoot('step', narration, undefined, 'after', opts);
     return result;
   }
 
@@ -93,7 +93,7 @@ export class Walkthrough {
   async check<T>(narration: string, fn: () => Promise<T> | T, opts: StepOptions = {}): Promise<T> {
     if (!this.enabled) return fn();
     const result = await fn();
-    await this.shoot('check', narration, undefined, opts.screenshot ?? 'after', opts);
+    if (opts.screenshot !== 'none') await this.shoot('check', narration, undefined, 'after', opts);
     return result;
   }
 

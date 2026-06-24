@@ -58,6 +58,12 @@ export function defineWalkthrough(config: Config = {}): ReturnType<typeof define
       { name: 'walkthrough', use: { ...devices['Desktop Chrome'], viewport } },
     ],
     ...rest,
-    reporter: [...normalizeReporter(reporter), [join(__dirname, 'reporter.ts'), reporterOptions]],
+    // Resolve the sibling reporter with the extension that matches how this
+    // file is being executed: `.ts` when run from source (this package's own
+    // dev), `.js` when run from the compiled `dist/` (installed consumers).
+    reporter: [
+      ...normalizeReporter(reporter),
+      [join(__dirname, __filename.endsWith('.ts') ? 'reporter.ts' : 'reporter.js'), reporterOptions],
+    ],
   });
 }

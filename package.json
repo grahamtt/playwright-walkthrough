@@ -1,13 +1,67 @@
 {
   "name": "playwright-walkthrough",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
   "description": "Turn Playwright functional tests into user walkthroughs (markdown + screenshots).",
+  "license": "MIT",
+  "author": "Graham Tibbitts",
+  "homepage": "https://github.com/grahamtt/playwright-walkthrough#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/grahamtt/playwright-walkthrough.git"
+  },
+  "bugs": {
+    "url": "https://github.com/grahamtt/playwright-walkthrough/issues"
+  },
+  "keywords": [
+    "playwright",
+    "walkthrough",
+    "documentation",
+    "docs",
+    "screenshots",
+    "markdown",
+    "testing",
+    "e2e",
+    "guides",
+    "tutorial"
+  ],
+  "type": "commonjs",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./config": {
+      "types": "./dist/config.d.ts",
+      "default": "./dist/config.js"
+    },
+    "./reporter": {
+      "types": "./dist/reporter.d.ts",
+      "default": "./dist/reporter.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc -p tsconfig.json",
+    "prepublishOnly": "npm run clean && npm run build",
     "test": "playwright test --project=chromium",
     "walkthrough": "playwright test --project=walkthrough"
   },
+  "peerDependencies": {
+    "@playwright/test": ">=1.49.0"
+  },
   "devDependencies": {
-    "@playwright/test": "^1.49.0"
+    "@playwright/test": "^1.49.0",
+    "@types/node": "^20.19.43"
   }
 }
