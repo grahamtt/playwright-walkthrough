@@ -1,5 +1,14 @@
 /** Public option + IR types for the walkthrough library. */
 
+/** Fixture options, set via `use` in a Playwright config (or `test.use`). */
+export interface WalkthroughTestOptions {
+  /** Walkthrough mode: capture guides for tagged tests. Default false.
+   *  `defineWalkthrough` turns it on for its `walkthrough` project. */
+  walkthroughMode: boolean;
+  /** The tag that opts a test into becoming a guide. Default '@walkthrough'. */
+  walkthroughTag: string;
+}
+
 export interface StepOptions {
   /** When to capture relative to the step's action. Defaults vary by helper:
    *  `act` → 'before' (show the highlighted target before acting);

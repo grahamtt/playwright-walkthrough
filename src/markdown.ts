@@ -10,7 +10,7 @@ export interface IndexOptions {
 }
 
 /** Strip inline Markdown so a string is safe as alt text / a heading anchor. */
-function stripMd(s: string): string {
+export function stripMd(s: string): string {
   return s.replace(/[*_`]/g, '').replace(/\[([^\]]+)\]\([^)]*\)/g, '$1');
 }
 

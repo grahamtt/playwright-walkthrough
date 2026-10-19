@@ -173,11 +173,15 @@ interface StepOptions {
 - Narration doubles as the image **alt text** for accessibility.
 
 ### 5.4 Behavior when walkthrough mode is OFF
-- `wt.act/step/check/screenshot` execute their callback exactly once and return
-  its value. Narration, options, and capture are **ignored**.
-- `wt.intro/note/outro/section` are **no-ops**.
+- `wt.act/step/check` execute their callback exactly once, inside a `test.step`
+  titled with the narration, and return its value. Options and capture are
+  **ignored**. (The step costs next to nothing and makes the helpers useful in
+  any test's report and trace, so there's no reason to write untagged tests
+  differently.)
+- `wt.screenshot/intro/note/outro/section` are **no-ops**.
 - `wt.silently(fn)` simply runs `fn`.
 - No screenshots, no IR, no extra waits → the test behaves as if `wt` weren't there.
+- "Off" also applies to an untagged test in a walkthrough-mode run (§6).
 
 ### 5.5 Return values & composability
 - `wt.act` resolves to the action's result and (optionally) returns the locator
@@ -198,19 +202,26 @@ interface StepOptions {
 
 Two ways to enable walkthrough mode; both supported:
 
-1. **Dedicated Playwright project** (recommended). A `defineWalkthrough()` config
-   helper registers a `walkthrough` project + the reporter:
+1. **Dedicated Playwright project** (recommended). Any project with
+   `use: { walkthroughMode: true }`. The `defineWalkthrough()` config helper
+   registers one named `walkthrough` (plus the reporter):
    ```bash
    npx playwright test --project=walkthrough
    ```
 2. **Environment flag** for ad-hoc runs:
    ```bash
-   WT=1 npx playwright test path/to/file.walkthrough.ts
+   WT=1 npx playwright test path/to/file.spec.ts
    ```
 
-**Test selection.** A test is treated as a walkthrough if it is tagged
-`@walkthrough` *or* lives in a `*.walkthrough.ts` file. In walkthrough mode the
-project filters to these; in normal mode they run as ordinary tests.
+**Test selection (decided).** Only tests tagged `@walkthrough` (configurable via
+`walkthroughTag`; a tag on a `test.describe` counts) are walkthroughs. They live in
+ordinary spec files and use the suite's normal `test`, merged with the `wt`
+fixture via `mergeTests`; there is no separate file suffix, import or config.
+A test is captured only when walkthrough mode is on **and** it is tagged. The
+`walkthrough` project also `grep`s to tagged tests; in normal mode they run as
+ordinary tests. Rationale: only a curated subset of a suite makes good guides,
+but choosing that subset should be metadata on a test, not a second way of
+declaring tests.
 
 ---
 
@@ -402,16 +413,23 @@ To keep committed docs diff-friendly:
 
 ## 12. Output Layout
 
+Each guide's directory (and IR `id`) is the spec file's path relative to
+`testDir`, minus extension and any `.spec`/`.test`/`.walkthrough` suffix, then the
+slugged describe + test title. Playwright rejects duplicate titles within a file,
+so ids are unique across the suite. With `testDir: 'tests'`, for
+`tests/projects.spec.ts` › "Create your first project":
+
 ```
 docs/walkthroughs/
   index.md
-  create-your-first-project/
-    walkthrough.md
-    walkthrough.json          # IR
-    assets/
-      01-open-your-dashboard.png
-      02-click-new-project.png
-      03-give-your-project-a-name.png
+  projects/
+    create-your-first-project/
+      walkthrough.md
+      walkthrough.json          # IR
+      assets/
+        01-open-your-dashboard.png
+        02-click-new-project.png
+        03-give-your-project-a-name.png
 ```
 
 ---
@@ -499,6 +517,11 @@ docs/walkthroughs/
   attachment (`src/reporter.ts`); `defineWalkthrough()` config helper wiring the
   projects + reporter + output dir (`src/config.ts`). `opts.waitFor` settle hook
   added. Verified on the live Trac app (`examples/trac-holding.walkthrough.ts`).
+- **M1.5 — One way to declare tests (DONE)**: opt in by tag, not file suffix
+  (§6); `walkthroughMode`/`walkthroughTag` option fixtures replace the
+  project-name check; `defineWalkthrough` no longer overrides `testMatch`;
+  narrated helpers report as `test.step` in both modes (§5.4, §5.5); guide ids
+  include the spec path (§12). Page-object example in `examples/`.
 - **M2 — Polish**: masking, arrows, sections/ToC content, templating/theming,
   determinism hooks, richer failure handling, docs + examples.
 - **M3 — Video (separate doc)**: overlay engine + video renderer over the same IR.
