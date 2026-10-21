@@ -175,6 +175,21 @@ For an ad-hoc run, `WT=1` turns walkthrough mode on in any project: `WT=1 npx pl
 - The reporter aggregates the IR across workers/shards and renders `walkthrough.md` per guide plus `index.md`, then prints a summary.
 - Each guide is written under a path built from its spec file (relative to `testDir`) and full title, e.g. with `testDir: 'tests'`, `tests/projects.spec.ts` › `Creating a project` → `walkthroughs/projects/creating-a-project/`. Tests with the same title in different files don't overwrite each other.
 
+## Development
+
+Build tooling is managed with [mise](https://mise.jdx.dev) (see `mise.toml`): [Bun](https://bun.sh) is the package manager and script runner, and Node runs Playwright's test runner, which doesn't support Bun.
+
+```sh
+mise install                      # installs bun + node
+bun install
+bunx playwright install chromium  # browser for the example tests
+
+bun run typecheck
+bun run build                     # compiles src/ → dist/ with tsc
+bun run test                      # examples as ordinary tests
+bun run walkthrough               # examples in walkthrough mode → walkthroughs/
+```
+
 ## License
 
 MIT © Graham Tibbitts

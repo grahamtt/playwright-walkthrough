@@ -1,0 +1,6 @@
+# Build tooling for this repo. `mise install` provides both:
+#   - bun:  package manager and script runner (`bun install`, `bun run build`)
+#   - node: runtime for Playwright's test runner, which doesn't support Bun
+[tools]
+node = "24"
+bun = "1.4"
