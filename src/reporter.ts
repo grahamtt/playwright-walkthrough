@@ -1,11 +1,11 @@
 import type { FullResult, Reporter, TestCase, TestResult } from '@playwright/test/reporter';
 import { readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join, relative } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import { renderGuide, renderIndex } from './markdown';
 import type { WalkthroughIR } from './types';
 
 export interface ReporterOptions {
-  /** Where index.md is written. Defaults to the parent of the first guide. */
+  /** Where index.md is written. Defaults to the output root the guides were written under. */
   outputDir?: string;
   /** Title for index.md. */
   title?: string;
@@ -48,7 +48,9 @@ export default class WalkthroughReporter implements Reporter {
       else problems += 1;
     }
 
-    const outputDir = this.options.outputDir ?? dirname(guides[0].dir);
+    // A guide's id is its path under the output root, so walk back up that many levels.
+    const first = guides[0];
+    const outputDir = this.options.outputDir ?? resolve(first.dir, ...first.ir.id.split('/').map(() => '..'));
     writeFileSync(join(outputDir, 'index.md'), renderIndex(guides, { title: this.options.title }));
 
     const rel = relative(process.cwd(), outputDir) || '.';

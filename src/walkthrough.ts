@@ -1,22 +1,31 @@
+import { test } from '@playwright/test';
 import type { Locator, Page, TestInfo } from '@playwright/test';
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { join, relative, sep } from 'node:path';
+import { stripMd } from './markdown';
 import { installOverlay } from './overlay';
 import type { IRScreenshot, IRStep, Rect, StepKind, StepOptions, WalkthroughIR } from './types';
 
 /**
  * The `wt` fixture object. Every authoring helper has two paths:
  *   - mode OFF  → run the user's callback and return; record nothing, touch no
- *                 disk, inject no overlay. This is the zero-overhead contract:
- *                 an annotated test behaves exactly like a plain test.
+ *                 disk, inject no overlay. The narrated helpers (`step`, `act`,
+ *                 `check`) still wrap the callback in a `test.step` titled with
+ *                 the narration, so they read as ordinary steps in the HTML
+ *                 report and trace of any test, guide or not.
  *   - mode ON   → drive the overlay engine, capture screenshot(s), append to the
  *                 in-memory IR, which is flushed to disk at teardown.
+ *
+ * Mode is ON only when walkthrough mode is active for the run (the
+ * `walkthroughMode` option, or `WT=1`) AND the test carries the walkthrough
+ * tag; the fixture decides and passes it in as `enabled`.
  */
 export class Walkthrough {
   /** True when walkthrough mode is active for this test. */
   readonly enabled: boolean;
 
   private steps: IRStep[] = [];
+  private readonly id: string;
   private title: string;
   private description = '';
   private stepIndex = 0;
@@ -24,8 +33,9 @@ export class Walkthrough {
   private dir = '';
   private assetsDir = '';
 
-  constructor(private readonly page: Page, private readonly info: TestInfo) {
-    this.enabled = info.project.name === 'walkthrough' || process.env.WT === '1';
+  constructor(private readonly page: Page, private readonly info: TestInfo, enabled: boolean) {
+    this.enabled = enabled;
+    this.id = guideId(info);
     this.title = info.title;
   }
 
@@ -33,7 +43,7 @@ export class Walkthrough {
   async begin(): Promise<void> {
     if (!this.enabled) return;
     const root = process.env.WT_OUT || join(process.cwd(), 'walkthroughs');
-    this.dir = join(root, slug(this.info.title));
+    this.dir = join(root, ...this.id.split('/'));
     this.assetsDir = join(this.dir, 'assets');
     rmSync(this.dir, { recursive: true, force: true });
     mkdirSync(this.assetsDir, { recursive: true });
@@ -53,10 +63,11 @@ export class Walkthrough {
 
   /** A narrated step with no single target (navigation, multi-element actions). */
   async step<T>(narration: string, fn: () => Promise<T> | T, opts: StepOptions = {}): Promise<T> {
-    if (!this.enabled) return fn();
-    const result = await fn();
-    if (opts.screenshot !== 'none') await this.shoot('step', narration, undefined, 'after', opts);
-    return result;
+    return this.asStep(narration, async () => {
+      const result = await fn();
+      if (this.enabled && opts.screenshot !== 'none') await this.shoot('step', narration, undefined, 'after', opts);
+      return result;
+    });
   }
 
   /** A narrated step bound to a locator: highlight it, then run the action. */
@@ -66,8 +77,18 @@ export class Walkthrough {
     fn: (l: Locator) => Promise<T> | T,
     opts: StepOptions = {},
   ): Promise<T> {
-    if (!this.enabled) return fn(locator);
+    return this.asStep(narration, async () => {
+      if (!this.enabled) return fn(locator);
+      return this.captureAct(narration, locator, fn, opts);
+    });
+  }
 
+  private async captureAct<T>(
+    narration: string,
+    locator: Locator,
+    fn: (l: Locator) => Promise<T> | T,
+    opts: StepOptions,
+  ): Promise<T> {
     const phase = opts.screenshot ?? 'before';
     const wantBefore = phase === 'before' || phase === 'both';
     const wantAfter = phase === 'after' || phase === 'both';
@@ -91,10 +112,11 @@ export class Walkthrough {
 
   /** Visualize an assertion: run it, then capture the asserted state. */
   async check<T>(narration: string, fn: () => Promise<T> | T, opts: StepOptions = {}): Promise<T> {
-    if (!this.enabled) return fn();
-    const result = await fn();
-    if (opts.screenshot !== 'none') await this.shoot('check', narration, undefined, 'after', opts);
-    return result;
+    return this.asStep(narration, async () => {
+      const result = await fn();
+      if (this.enabled && opts.screenshot !== 'none') await this.shoot('check', narration, undefined, 'after', opts);
+      return result;
+    });
   }
 
   /** Pure narration block. Captures a screenshot only if asked. */
@@ -136,7 +158,7 @@ export class Walkthrough {
     const passed = this.info.status === 'passed';
     const ir: WalkthroughIR = {
       schemaVersion: 1,
-      id: slug(this.info.title),
+      id: this.id,
       title: this.title,
       description: this.description,
       tags: this.info.tags ?? [],
@@ -157,6 +179,12 @@ export class Walkthrough {
   }
 
   // ---- internals -----------------------------------------------------------
+
+  /** Report a narrated helper as a `test.step` in both modes. Not boxed: a
+   *  failure inside the user's callback should point at the user's code. */
+  private asStep<T>(narration: string, body: () => Promise<T>): Promise<T> {
+    return test.step(stripMd(narration), body);
+  }
 
   /** Run the user's settle hook before a capture; never fail the test on it. */
   private async settle(opts: StepOptions): Promise<void> {
@@ -229,6 +257,23 @@ export class Walkthrough {
   private record(kind: StepKind, narration: string, target?: IRStep['target'], screenshots: IRScreenshot[] = []): void {
     this.steps.push({ index: ++this.stepIndex, kind, narration, target, screenshots });
   }
+}
+
+/**
+ * A guide's id, which is also its path under the output root: the test file
+ * (relative to the project's testDir, minus extension and any
+ * `.spec`/`.test`/`.walkthrough` suffix) followed by its describe + test title,
+ * e.g. `projects/create-your-first-project`. Playwright rejects duplicate titles
+ * within a file, so this is unique across the suite.
+ */
+function guideId(info: TestInfo): string {
+  const file = relative(info.project.testDir, info.file)
+    .replace(/\.[cm]?[jt]sx?$/, '')
+    .replace(/\.(spec|test|walkthrough)$/, '');
+  const dirs = file.split(sep).map(slug).filter(Boolean);
+  // titlePath = [file, ...describes, title]; the file is already covered above.
+  const title = slug(info.titlePath.slice(1).join(' ')) || 'walkthrough';
+  return [...dirs, title].join('/');
 }
 
 /** Slugify narration/title into a filesystem- and URL-safe string. */
