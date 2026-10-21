@@ -180,14 +180,13 @@ For an ad-hoc run, `WT=1` turns walkthrough mode on in any project: `WT=1 npx pl
 Build tooling is managed with [mise](https://mise.jdx.dev) (see `mise.toml`): [Bun](https://bun.sh) is the package manager and script runner, and Node runs Playwright's test runner, which doesn't support Bun.
 
 ```sh
-mise install                      # installs bun + node
-bun install
-bunx playwright install chromium  # browser for the example tests
+mise install         # installs bun + node, then (via a hook) runs `bun install`
+                     # and `bunx playwright install chromium`
 
 bun run typecheck
-bun run build                     # compiles src/ → dist/ with tsc
-bun run test                      # examples as ordinary tests
-bun run walkthrough               # examples in walkthrough mode → walkthroughs/
+bun run build        # compiles src/ → dist/ with tsc
+bun run test         # examples as ordinary tests
+bun run walkthrough  # examples in walkthrough mode → walkthroughs/
 ```
 
 ## License

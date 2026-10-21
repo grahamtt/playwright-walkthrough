@@ -4,3 +4,9 @@
 [tools]
 node = "24"
 bun = "1.4"
+
+# Runs after every `mise install` (even when the tools were already present),
+# so one command also installs dependencies and the browser the tests use.
+# Both steps are no-ops when already up to date.
+[hooks]
+postinstall = "bun install && bunx playwright install chromium"
